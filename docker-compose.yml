@@ -1,0 +1,75 @@
+services:
+  mongo:
+    image: mongo:7
+    restart: unless-stopped
+    ports:
+      - '27017:27017'
+    volumes:
+      - mongo-data:/data/db
+    healthcheck:
+      test: ['CMD', 'mongosh', '--quiet', '--eval', "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  sim:
+    build: ./sim
+    restart: unless-stopped
+    environment:
+      DATA_DIR: /data
+    volumes:
+      - ./data:/data:ro
+    ports:
+      - '8000:8000'
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'python',
+          '-c',
+          "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build:
+      context: .
+      dockerfile: api/Dockerfile
+    restart: unless-stopped
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      API_PORT: 4000
+      MONGO_URL: mongodb://mongo:27017/secondsun
+      SIM_URL: http://sim:8000
+      WEB_ORIGIN: http://localhost:5173
+      PUBLIC_BASE_URL: http://localhost:5173
+      DATA_DIR: /app/data
+    volumes:
+      - uploads:/app/api/uploads
+    ports:
+      - '4000:4000'
+    depends_on:
+      mongo:
+        condition: service_healthy
+      sim:
+        condition: service_healthy
+
+  web:
+    build:
+      context: .
+      dockerfile: web/Dockerfile
+      args:
+        VITE_API_URL: http://localhost:4000
+    restart: unless-stopped
+    ports:
+      - '5173:80'
+    depends_on:
+      - api
+
+volumes:
+  mongo-data:
+  uploads:

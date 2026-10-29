@@ -1,0 +1,35 @@
+import js from '@eslint/js';
+import tseslint from 'typescript-eslint';
+import reactHooks from 'eslint-plugin-react-hooks';
+import jsxA11y from 'eslint-plugin-jsx-a11y';
+import globals from 'globals';
+
+export default tseslint.config(
+  {
+    ignores: ['**/dist/**', '**/node_modules/**', '**/coverage/**', 'sim/**', 'api/uploads/**'],
+  },
+  js.configs.recommended,
+  ...tseslint.configs.recommended,
+  {
+    files: ['web/**/*.{ts,tsx}'],
+    languageOptions: { globals: globals.browser },
+    plugins: { 'react-hooks': reactHooks },
+    rules: reactHooks.configs.recommended.rules,
+  },
+  {
+    files: ['web/**/*.tsx'],
+    ...jsxA11y.flatConfigs.recommended,
+  },
+  {
+    files: ['api/**/*.ts', 'packages/**/*.ts', 'scripts/**/*.mjs', '*.mjs', 'web/*.ts'],
+    languageOptions: { globals: globals.node },
+  },
+  {
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        { argsIgnorePattern: '^_', varsIgnorePattern: '^_' },
+      ],
+    },
+  },
+);

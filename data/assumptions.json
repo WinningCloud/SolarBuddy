@@ -1,0 +1,53 @@
+{
+  "version": 1,
+  "note": "Defaults for Settings. status is 'sourced' only where a real reference has been checked; otherwise 'assumption'. See docs/SOURCES.md.",
+  "site": { "name": "Chennai demo site", "latitudeDeg": 13.08, "longitudeDeg": 80.27 },
+  "energy": {
+    "tariffInrPerKwh": { "value": 7.5, "unit": "₹/kWh", "status": "assumption", "source": "Assumption: typical commercial tariff. Replace with the site's tariff." },
+    "peakSunHoursPerDay": { "value": 5.0, "unit": "h/day", "status": "assumption", "source": "Assumption for southern India. Replace with the local figure." },
+    "annualDegradation": { "value": 0.007, "unit": "per year", "status": "assumption", "source": "Assumption: about 0.7 percent per year. To be checked against NREL degradation-rate reviews." },
+    "remainingLifeYears": { "value": 10, "unit": "yr", "status": "assumption", "source": "Assumption: planned remaining service life of a reused panel." }
+  },
+  "repairCostsInr": {
+    "replace_junction_box": { "low": 350, "high": 700, "status": "assumption", "source": "Assumption: part plus 0.5 h labour." },
+    "bypass_dead_substring": { "low": 200, "high": 500, "status": "assumption", "source": "Assumption: 0.5 h labour, no parts." },
+    "resolder_busbar": { "low": 400, "high": 900, "status": "assumption", "source": "Assumption: 1 h labour plus materials." },
+    "clean_glass": { "low": 50, "high": 150, "status": "assumption", "source": "Assumption: 0.25 h labour." }
+  },
+  "resalePriceInrPerWatt": {
+    "healthy": { "low": 8, "high": 14, "status": "assumption", "source": "Assumption: second-hand panel resale, 80 percent or more of rated power." },
+    "reduced": { "low": 4, "high": 8, "status": "assumption", "source": "Assumption: 50 to 80 percent of rated power." }
+  },
+  "materialPricesInrPerKg": {
+    "glass": { "value": 1, "status": "assumption", "source": "Assumption" },
+    "aluminium": { "value": 130, "status": "assumption", "source": "Assumption: scrap aluminium" },
+    "silicon": { "value": 40, "status": "assumption", "source": "Assumption" },
+    "copper": { "value": 600, "status": "assumption", "source": "Assumption: scrap copper" },
+    "silver": { "value": 65000, "status": "assumption", "source": "Assumption: recovered silver" }
+  },
+  "panelCompositionFraction": {
+    "glass": 0.7,
+    "aluminium": 0.18,
+    "silicon": 0.035,
+    "copper": 0.01,
+    "silver": 0.0005
+  },
+  "compositionSource": "Assumption: approximate composition of crystalline-silicon panels. To be verified against IRENA and IEA-PVPS end-of-life reports.",
+  "recoveryRate": {
+    "glass": { "low": 0.8, "high": 0.95 },
+    "aluminium": { "low": 0.9, "high": 0.98 },
+    "silicon": { "low": 0.6, "high": 0.9 },
+    "copper": { "low": 0.7, "high": 0.9 },
+    "silver": { "low": 0.4, "high": 0.8 }
+  },
+  "recoverySource": "Assumption, to be verified",
+  "panelMassKgPer60Cell": 18.5,
+  "massSource": "Assumption: typical 60-cell panel mass",
+  "reuse": {
+    "installAndBosCostInr": { "low": 1200, "high": 2000, "status": "assumption", "source": "Assumption: mounting, wiring and labour to put a reused panel into service." },
+    "performanceRatio": { "value": 0.8, "status": "assumption", "source": "Assumption: system losses between panel and meter." },
+    "earlyFailureRiskIfCracked": { "low": 0.3, "high": 0.8, "status": "assumption", "source": "Assumption: share of remaining energy lost if cracked cells progress." },
+    "minimumFractionOfRated": { "value": 0.35, "status": "assumption", "source": "Assumption: below this the panel is not worth installing." }
+  },
+  "recycleHandlingCostInr": { "low": 150, "high": 400, "status": "assumption", "source": "Assumption: collection and transport per panel." }
+}

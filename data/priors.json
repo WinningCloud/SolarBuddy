@@ -1,0 +1,126 @@
+{
+  "version": 1,
+  "note": "Every entry carries a source and status. 'assumption' entries are listed in docs/SOURCES.md as to be verified. Nothing here is a measured field statistic.",
+  "faultClasses": [
+    { "id": "junction_box", "label": "Junction box fault" },
+    { "id": "cell_cracking", "label": "Cell cracking" },
+    { "id": "browning_soiling", "label": "Browning or soiling" },
+    { "id": "substring_failure", "label": "Dead substring or bypass diode" }
+  ],
+  "priors": {
+    "junction_box": 0.3,
+    "cell_cracking": 0.25,
+    "browning_soiling": 0.25,
+    "substring_failure": 0.2
+  },
+  "priorsSource": "Assumption, to be verified against NREL PV failure-mode reviews and IEA-PVPS task 13 reports.",
+  "priorsStatus": "assumption",
+  "decisionPartition": {
+    "repair": ["junction_box", "substring_failure"],
+    "reuse": ["browning_soiling"],
+    "recycle": ["cell_cracking"]
+  },
+  "partitionNote": "Assumption: junction box and bypass faults are usually repairable, soiling or mild browning panels are usually reusable after cleaning, cracked cells are usually not worth repairing.",
+  "stopThreshold": 0.7,
+  "questions": [
+    {
+      "id": "age_band",
+      "cost": 1,
+      "options": ["lt5", "5to10", "10to20", "gt20"],
+      "likelihood": {
+        "lt5": [0.35, 0.2, 0.1, 0.35],
+        "5to10": [0.3, 0.3, 0.2, 0.2],
+        "10to20": [0.2, 0.3, 0.35, 0.15],
+        "gt20": [0.1, 0.3, 0.45, 0.15]
+      },
+      "source": "Assumption, to be verified",
+      "status": "assumption"
+    },
+    {
+      "id": "installed_where",
+      "cost": 1,
+      "options": ["rooftop", "ground", "tracker", "unknown_site"],
+      "likelihood": {
+        "rooftop": [0.3, 0.2, 0.3, 0.2],
+        "ground": [0.25, 0.3, 0.2, 0.25],
+        "tracker": [0.2, 0.4, 0.2, 0.2],
+        "unknown_site": [0.25, 0.25, 0.25, 0.25]
+      },
+      "source": "Assumption, to be verified",
+      "status": "assumption"
+    },
+    {
+      "id": "hot_spot_history",
+      "cost": 1,
+      "options": ["yes", "no"],
+      "likelihood": {
+        "yes": [0.2, 0.35, 0.05, 0.4],
+        "no": [0.3, 0.2, 0.3, 0.2]
+      },
+      "source": "Assumption, to be verified",
+      "status": "assumption"
+    },
+    {
+      "id": "water_ingress",
+      "cost": 1,
+      "options": ["yes", "no"],
+      "likelihood": {
+        "yes": [0.45, 0.2, 0.2, 0.15],
+        "no": [0.2, 0.25, 0.3, 0.25]
+      },
+      "source": "Assumption, to be verified",
+      "status": "assumption"
+    },
+    {
+      "id": "junction_box_condition",
+      "cost": 1,
+      "options": ["fine", "loose", "burnt", "cracked_lid"],
+      "likelihood": {
+        "fine": [0.05, 0.3, 0.35, 0.3],
+        "loose": [0.35, 0.1, 0.05, 0.1],
+        "burnt": [0.55, 0.05, 0.02, 0.38],
+        "cracked_lid": [0.4, 0.1, 0.1, 0.1]
+      },
+      "source": "Assumption, to be verified",
+      "status": "assumption"
+    },
+    {
+      "id": "glass_condition",
+      "cost": 1,
+      "options": ["clean", "dusty", "cracked", "shattered"],
+      "likelihood": {
+        "clean": [0.3, 0.2, 0.2, 0.3],
+        "dusty": [0.05, 0.05, 0.85, 0.05],
+        "cracked": [0.1, 0.6, 0.1, 0.2],
+        "shattered": [0.05, 0.8, 0.05, 0.1]
+      },
+      "source": "Assumption, to be verified",
+      "status": "assumption"
+    },
+    {
+      "id": "discolouration",
+      "cost": 1,
+      "options": ["none", "yellow_brown", "dark_patches"],
+      "likelihood": {
+        "none": [0.35, 0.3, 0.05, 0.3],
+        "yellow_brown": [0.05, 0.1, 0.75, 0.1],
+        "dark_patches": [0.1, 0.35, 0.05, 0.5]
+      },
+      "source": "Assumption, to be verified",
+      "status": "assumption"
+    },
+    {
+      "id": "output_band",
+      "cost": 2,
+      "options": ["above90", "70to90", "40to70", "below40"],
+      "likelihood": {
+        "above90": [0.05, 0.1, 0.7, 0.15],
+        "70to90": [0.15, 0.2, 0.3, 0.35],
+        "40to70": [0.4, 0.3, 0.1, 0.2],
+        "below40": [0.4, 0.2, 0.0, 0.4]
+      },
+      "source": "Assumption, to be verified. Measured output is relative to rated power.",
+      "status": "assumption"
+    }
+  ]
+}

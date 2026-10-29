@@ -1,0 +1,9 @@
+[project]
+name = "secondsun-sim"
+version = "0.1.0"
+description = "Deterministic PV models, triage and economics for SecondSun."
+requires-python = ">=3.11"
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]

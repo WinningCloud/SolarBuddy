@@ -1,0 +1,2 @@
+# Phase 2: constraint-based array grouping. Phase 1 uses a stub and does not import it.
+ortools>=9.11

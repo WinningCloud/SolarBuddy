@@ -463,8 +463,19 @@ export const api = {
       return model ? [{ id: p.id, model }] : [];
     });
     const scenario = SCENARIOS.find((s) => s.id === scenarioId) ?? SCENARIOS[0]!;
-    const useLayout =
-      layout && layout.length === panels.length ? layout : defaultLayout(panels.map((p) => p.id));
+    let useLayout: LayoutSlot[];
+    if (layout && layout.length === panels.length) {
+      useLayout = layout;
+    } else {
+      // No layout from the person: place panels in the optimised wiring order, so the wires
+      // run neatly along each row instead of crossing the array.
+      const noon: Conditions = { irradiance: [1000, 1000, 1000], cellTempC: 45 };
+      const curves = new Map(panels.map((p) => [p.id, buildCurve(p.model, noon, 140)]));
+      const opt = optimise(panels, curves, noon);
+      const wired = opt.grouping.flat(2);
+      const rest = panels.map((p) => p.id).filter((id) => !wired.includes(id));
+      useLayout = defaultLayout([...wired, ...rest]);
+    }
     await new Promise((r) => setTimeout(r, 16));
     const day = simulateDay(panels, useLayout, scenario, settings, settings.latitudeDeg, {
       relayCost: settings.relayCostInrPerPanel,

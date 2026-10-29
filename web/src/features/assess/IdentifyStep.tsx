@@ -12,6 +12,7 @@ import {
   type UploadItem,
 } from '@/components/ui';
 import { api } from '@/lib/api';
+import { readNameplate, VisionUnavailable } from '@/lib/vision';
 import { errorMessage, useInvalidatePanels } from '@/lib/queries';
 import { nameplateSchema, plausibilityIssues } from '@/lib/plausibility';
 import {
@@ -58,6 +59,8 @@ function IdentifyForm({ panel }: { panel: PanelPassport }) {
   const [form, setForm] = useState<Form>(() => toForm(panel.nameplate));
   const [errors, setErrors] = useState<Partial<Record<NameplateField, string>>>({});
   const [demoMode, setDemoMode] = useState(false);
+  const [evidence, setEvidence] = useState<Partial<Record<NameplateField, string>>>({});
+  const [nothingRead, setNothingRead] = useState(false);
   const [photoError, setPhotoError] = useState<string | null>(null);
   const photo = panel.inspection.photos.find((p) => p.slot === 'nameplate');
   const [preview, setPreview] = useState<string | null>(photo?.url ?? null);
@@ -66,14 +69,32 @@ function IdentifyForm({ panel }: { panel: PanelPassport }) {
   const extract = useMutation({
     mutationFn: async (file: File) => {
       await api.addPhoto(panel.id, 'nameplate', file);
-      return api.extractNameplate(panel.id, file);
+      try {
+        // Real analysis: the api resizes the photo and asks the vision model to read the label.
+        const reading = await readNameplate(file, file.name);
+        await api.patchPanel(panel.id, { nameplate: reading.nameplate });
+        return {
+          np: reading.nameplate,
+          mode: 'live' as const,
+          evidence: reading.evidence,
+          readCount: reading.readCount,
+        };
+      } catch (e) {
+        if (!(e instanceof VisionUnavailable)) throw e;
+        // The service is not reachable or not configured: fixture values, clearly labelled.
+        const fallback = await api.extractNameplate(panel.id, file);
+        return { np: fallback.nameplate, mode: 'demo' as const, evidence: {}, readCount: -1 };
+      }
     },
-    onSuccess: ({ nameplate: np, mode }) => {
+    onSuccess: ({ np, mode, evidence: ev, readCount }) => {
       setNameplate(np);
       setForm(toForm(np));
       setDemoMode(mode === 'demo');
+      setEvidence(ev);
+      setNothingRead(readCount === 0);
       setPhotoError(null);
       setErrors({});
+      dirty.current = false;
       invalidate(panel.id);
     },
     onError: (e) => setPhotoError(errorMessage(e, t('identify.failed'))),
@@ -173,9 +194,14 @@ function IdentifyForm({ panel }: { panel: PanelPassport }) {
       return (
         <SourceTag
           kind="extracted"
-          source={t('identify.confidenceDetail', {
-            percent: Math.round((nameplate.confidence[field] ?? 0) * 100),
-          })}
+          source={
+            <>
+              {t('identify.confidenceDetail', {
+                percent: Math.round((nameplate.confidence[field] ?? 0) * 100),
+              })}
+              {evidence[field] ? ` ${t('identify.evidence', { text: evidence[field] })}` : ''}
+            </>
+          }
         />
       );
     if (src === 'manual') return <SourceTag kind="entered" source={t('identify.enteredDetail')} />;
@@ -243,6 +269,16 @@ function IdentifyForm({ panel }: { panel: PanelPassport }) {
             <h2 className="text-md">{t('identify.manualTitle')}</h2>
             <p className="text-sm text-ink-2">{t('identify.manualHint')}</p>
           </div>
+          {nothingRead ? (
+            <Banner tone="warning" live>
+              {t('identify.nothingRead')}
+            </Banner>
+          ) : null}
+          {!demoMode && Object.keys(evidence).length > 0 ? (
+            <Banner tone="info" live>
+              {t('identify.liveBanner')}
+            </Banner>
+          ) : null}
           {issues.length > 0 ? (
             <Banner tone="warning" title={t('identify.plausibility.title')} live>
               <ul className="list-disc pl-4">

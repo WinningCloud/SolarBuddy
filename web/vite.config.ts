@@ -12,5 +12,6 @@ export default defineConfig({
       '@data': path.resolve(__dirname, '../data'),
     },
   },
-  server: { port: 5173, fs: { allow: ['..'] } },
+  // host: true also serves 127.0.0.1 and the network address, not just localhost.
+  server: { port: 5173, host: true, fs: { allow: ['..'] } },
 });

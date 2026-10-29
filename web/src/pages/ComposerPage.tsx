@@ -26,7 +26,7 @@ import {
 import { SeriesChart } from '@/components/IvChart';
 import { formatInr, formatNumber, formatPercent, formatUnit } from '@/design/format';
 import { palette } from '@/design/tokens';
-import { api, healthOf } from '@/lib/api';
+import { api, decisionOf, healthOf } from '@/lib/api';
 import { cn } from '@/lib/cn';
 import { errorMessage, usePanels } from '@/lib/queries';
 import type { ConfigKind, ConfigResult, DayResult } from '@/lib/types';
@@ -53,11 +53,24 @@ const clock = (minute: number) =>
 export function ComposerPage() {
   const { t } = useTranslation();
   const { data: allPanels, isLoading, isError, error, refetch, isFetching } = usePanels();
-  const pool = useMemo(() => (allPanels ?? []).filter((p) => p.status === 'in_pool'), [allPanels]);
+  // Every assessed Reuse or Repair panel can be composed, not only ones explicitly added to the
+  // pool: otherwise a panel assessed but not yet "added" looks like a missing pool.
+  const pool = useMemo(
+    () =>
+      (allPanels ?? []).filter((p) => {
+        if (p.status === 'in_pool') return true;
+        const d = decisionOf(p);
+        return Boolean(p.twin) && p.status !== 'draft' && (d === 'reuse' || d === 'repair');
+      }),
+    [allPanels],
+  );
+  const inPoolIds = pool.filter((p) => p.status === 'in_pool').map((p) => p.id);
   const [selected, setSelected] = useState<string[] | null>(null);
   const [scenarioId, setScenarioId] = useState(api.scenarios[0]!.id);
   const [layout, setLayout] = useState<LayoutSlot[]>([]);
   const [swapFrom, setSwapFrom] = useState<string | null>(null);
+  // Until the person moves a panel, the layout follows the optimised wiring order.
+  const [touched, setTouched] = useState(false);
   const [view, setView] = useState<ConfigKind>('optimised_grouping');
   const [tab, setTab] = useState('layout');
   const [frame, setFrame] = useState(0);
@@ -67,7 +80,7 @@ export function ComposerPage() {
     null,
   );
 
-  const ids = selected ?? pool.map((p) => p.id);
+  const ids = selected ?? (inPoolIds.length >= 2 ? inPoolIds : pool.map((p) => p.id));
   const chosen = ids.filter((id) => pool.some((p) => p.id === id));
 
   // Keep the layout in step with the selection.
@@ -80,12 +93,13 @@ export function ComposerPage() {
     setResult(null);
     setPlaying(false);
     setFrame(0);
+    setTouched(false);
     // chosen.join keeps this stable between renders.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [chosen.join('|')]);
 
   const run = useMutation({
-    mutationFn: () => api.runComposer(chosen, scenarioId, layout),
+    mutationFn: () => api.runComposer(chosen, scenarioId, touched ? layout : undefined),
     onSuccess: (r) => {
       setResult({ day: r.day, labels: r.labels });
       setLayout(r.layout);
@@ -137,6 +151,7 @@ export function ComposerPage() {
       }),
     );
     setSwapFrom(null);
+    setTouched(true);
     setResult(null);
   }
 
@@ -191,7 +206,7 @@ export function ComposerPage() {
         {header}
         <Card>
           <EmptyState
-            title={t('composer.poolEmpty')}
+            title={pool.length === 1 ? t('composer.selectAtLeast') : t('composer.poolEmpty')}
             description={`${t('composer.poolEmptyHint')} ${pool.length === 1 ? t('composer.selectAtLeast') : ''}`}
             actions={
               <Link to="/panels" className={buttonClasses({})}>

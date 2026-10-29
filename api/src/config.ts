@@ -17,13 +17,19 @@ const schema = z.object({
   PUBLIC_BASE_URL: z.string().url().default('http://localhost:5173'),
   LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace']).default('info'),
   DATA_DIR: z.string().default(path.join(repoRoot, 'data')),
-  LLM_PROVIDER: z.enum(['mock', 'anthropic']).default('mock'),
-  ANTHROPIC_API_KEY: z.string().default(''),
-  ANTHROPIC_MODEL: z.string().default('claude-sonnet-5-5'),
-  VOICE_PROVIDER: z.enum(['mock', 'elevenlabs']).default('mock'),
-  ELEVENLABS_API_KEY: z.string().default(''),
-  ELEVENLABS_VOICE_ID: z.string().default(''),
   NODE_ENV: z.string().default('development'),
+
+  OPENROUTER_API_KEY: z.string().default(''),
+  OPENROUTER_BASE_URL: z.string().url().default('https://openrouter.ai/api/v1'),
+  OPENROUTER_APP_URL: z.string().default('http://localhost:5173'),
+  OPENROUTER_APP_NAME: z.string().default('SecondSun'),
+  OPENROUTER_MODEL_VISION: z.string().default(''),
+  OPENROUTER_MODEL_PARSE: z.string().default(''),
+  OPENROUTER_MODEL_EXPLAIN: z.string().default(''),
+  OPENROUTER_MODEL_FALLBACK: z.string().default(''),
+  LLM_MODE: z.enum(['live', 'cache', 'mock']).default('mock'),
+  LLM_TIMEOUT_MS: z.coerce.number().int().positive().default(45000),
+  LLM_DAILY_CALL_CAP: z.coerce.number().int().positive().default(2000),
 });
 
 const parsed = schema.safeParse(process.env);

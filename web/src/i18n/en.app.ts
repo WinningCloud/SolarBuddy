@@ -139,6 +139,11 @@ const enApp = {
       imppA: 'Current at max power (Impp)',
       yearManufactured: 'Year of manufacture or install',
     },
+    evidence: 'Read as: "{{text}}".',
+    liveBanner:
+      'Read from your photo by the vision model. It can misread, so check each value against the label.',
+    nothingRead:
+      'No ratings could be read from this photo. Retake it closer and without glare, or type the values.',
     tagExtracted: 'Extracted',
     tagEntered: 'Entered by you',
     lowConfidence: 'Low confidence. Check this against the nameplate.',
@@ -186,7 +191,17 @@ const enApp = {
     hazy: 'Hazy or thin cloud',
     overcast: 'Overcast',
     classifyNote:
-      'Photo-based damage suggestions need the live service and are not connected in this build.',
+      'Photo analysis is not available right now: the analysis service is not reachable. Use the checklist below.',
+    analyse: 'Analyse photos',
+    analysing: 'Analysing photos',
+    analyseHint: 'Suggests visible damage from your photos. You confirm each suggestion.',
+    noneFound:
+      'No visible damage was found in these photos. Check the panel yourself before relying on this.',
+    suggestedTitle: 'Suggested from your photos. Confirm?',
+    confidenceShort: '{{percent}}% sure',
+    accept: 'Accept',
+    acceptAll: 'Accept all',
+    dismiss: 'Dismiss',
   },
   questions: {
     title: 'A few questions',
@@ -209,13 +224,35 @@ const enApp = {
     change: 'Change',
     voice: {
       title: 'Voice',
-      quiet: 'Optional. Answer by tapping, or by voice when connected.',
-      notConnected: 'Voice is not connected in this build.',
-      notConnectedHelp:
-        'Voice answers need the voice agent and the live service. Tap the answers below instead.',
+      quiet: 'Optional. Tapping an answer always works too.',
+      notConfigured:
+        'Voice is not set up. Add the agent ID to the environment file to turn it on. Tap the answers below.',
       mic: 'Start voice',
-      speaker: 'Read the question aloud',
+      stop: 'Stop',
+      reconnect: 'Reconnect',
+      speaker: 'Speaker',
+      mute: 'Mute',
+      unmute: 'Unmute',
       language: 'Voice language',
+      pushToTalk: 'Push to talk',
+      holdToTalk: 'Hold to talk',
+      idle: 'Voice is off',
+      requesting: 'Asking for microphone access',
+      connecting: 'Connecting',
+      listening: 'Listening',
+      speaking: 'Speaking',
+      error: 'Voice stopped',
+      micDenied:
+        'Microphone access was blocked. Allow it in your browser settings, or tap the answers.',
+      noMic: 'No microphone was found on this device. Tap the answers instead.',
+      connectionFailed:
+        'Could not connect to the voice agent. Check your connection and try again.',
+      you: 'You',
+      assistant: 'Assistant',
+      heard: 'Heard',
+      matched: 'matched',
+      unclear: 'not matched, please repeat or tap an answer',
+      confirmMeasurement: 'Save {{quantity}} = {{value}} {{unit}}?',
     },
     items: {
       age_band: {

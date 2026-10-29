@@ -10,6 +10,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@elevenlabs/react": "^1.20.1",
     "@fontsource/inter": "^5.1.0",
     "@fontsource/noto-sans-devanagari": "^5.1.0",
     "@fontsource/noto-sans-tamil": "^5.1.0",

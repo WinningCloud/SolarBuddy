@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
-import { CheckCircle2, Mic, Undo2, Volume2 } from 'lucide-react';
+import { CheckCircle2, Undo2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
@@ -20,6 +20,7 @@ import { api } from '@/lib/api';
 import { errorMessage, keys, useInvalidatePanels } from '@/lib/queries';
 import { faultClassIds, optionsOf, priorsMeta, QUESTION_IDS } from '@/lib/demo/triage';
 import type { FaultClassId, PanelPassport, TriageState } from '@/lib/types';
+import { VoiceDock } from './VoiceDock';
 import { FlowFooter, StepFrame, StepHeader, stepPath } from './flow';
 
 function useMediaQuery(query: string): boolean {
@@ -67,34 +68,6 @@ function Beliefs({ triage }: { triage: TriageState }) {
   );
 }
 
-function VoiceDock() {
-  const { t } = useTranslation();
-  return (
-    <div className="flex flex-wrap items-center gap-3 rounded-card border border-line bg-surface px-4 py-3">
-      <Button
-        variant="secondary"
-        size="lg"
-        disabled
-        leadingIcon={<Mic className="h-4 w-4" aria-hidden="true" />}
-      >
-        {t('questions.voice.mic')}
-      </Button>
-      <Button
-        variant="ghost"
-        size="lg"
-        disabled
-        leadingIcon={<Volume2 className="h-4 w-4" aria-hidden="true" />}
-      >
-        {t('questions.voice.speaker')}
-      </Button>
-      <p className="min-w-0 flex-1 text-sm text-ink-2" role="status">
-        <span className="font-medium text-ink">{t('questions.voice.notConnected')}</span>{' '}
-        {t('questions.voice.notConnectedHelp')}
-      </p>
-    </div>
-  );
-}
-
 function Questions({ panel }: { panel: PanelPassport }) {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -102,6 +75,7 @@ function Questions({ panel }: { panel: PanelPassport }) {
   const wide = useMediaQuery('(min-width: 1024px)');
   const [sheet, setSheet] = useState(false);
   const [viewing, setViewing] = useState<string | null>(null);
+  const [tapped, setTapped] = useState<{ questionId: string; label: string } | null>(null);
   const answers = panel.assessment.answers;
 
   const triage = useQuery({
@@ -170,7 +144,7 @@ function Questions({ panel }: { panel: PanelPassport }) {
       <StepHeader title={t('questions.title')} />
       <div className="grid gap-6 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
         <div className="flex flex-col gap-4">
-          <VoiceDock />
+          <VoiceDock panel={panel} onChanged={() => invalidate(panel.id)} tappedAnswer={tapped} />
 
           {triage.isError ? (
             <Banner
@@ -209,7 +183,16 @@ function Questions({ panel }: { panel: PanelPassport }) {
                     t(`questions.items.${questionId}.hint`, { defaultValue: '' }) || undefined
                   }
                   value={current}
-                  onChange={(value) => answer.mutate({ questionId, value })}
+                  onChange={(value) => {
+                    setTapped({
+                      questionId,
+                      label:
+                        value === 'not_sure'
+                          ? t('questions.notSure')
+                          : t(`questions.items.${questionId}.options.${value}`),
+                    });
+                    answer.mutate({ questionId, value });
+                  }}
                   options={[
                     ...optionsOf(questionId).map((o) => ({
                       value: o,

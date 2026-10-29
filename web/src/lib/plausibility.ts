@@ -18,7 +18,8 @@ export const nameplateSchema = z.object({
   iscA: num('Isc', 0.5, 20),
   vmppV: num('Vmpp', 8, 55),
   imppA: num('Impp', 0.5, 20),
-  yearManufactured: num('Year', 1990, thisYear).int('Year must be a whole number'),
+  // Optional: many labels print no date, and the electrical model does not need it.
+  yearManufactured: num('Year', 1990, thisYear).int('Year must be a whole number').optional(),
 });
 
 export type PlausibilityCode = 'vmpp_not_below_voc' | 'impp_not_below_isc' | 'pmax_mismatch';

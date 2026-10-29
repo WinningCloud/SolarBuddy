@@ -12,6 +12,7 @@ import './i18n';
 
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
+import { ConversationProvider } from '@elevenlabs/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { createBrowserRouter, Navigate, RouterProvider } from 'react-router-dom';
 import { Toaster, TooltipProvider } from '@/components/ui';
@@ -72,10 +73,12 @@ if (!root) throw new Error('Missing #root element');
 createRoot(root).render(
   <StrictMode>
     <QueryClientProvider client={queryClient}>
-      <TooltipProvider delayDuration={300}>
-        <RouterProvider router={router} />
-        <Toaster />
-      </TooltipProvider>
+      <ConversationProvider>
+        <TooltipProvider delayDuration={300}>
+          <RouterProvider router={router} />
+          <Toaster />
+        </TooltipProvider>
+      </ConversationProvider>
     </QueryClientProvider>
   </StrictMode>,
 );

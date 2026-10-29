@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
   Banner,
+  Button,
   Card,
   CardBody,
   CardHeader,
@@ -15,7 +16,14 @@ import {
   type UploadItem,
 } from '@/components/ui';
 import { CELL_TYPES, PanelGrid, PanelGridLegend } from '@/components/PanelGrid';
+import { useMutation } from '@tanstack/react-query';
 import { api } from '@/lib/api';
+import {
+  dataUrlToBlob,
+  suggestDefects,
+  VisionUnavailable,
+  type DefectSuggestion,
+} from '@/lib/vision';
 import { errorMessage, useInvalidatePanels } from '@/lib/queries';
 import {
   DAMAGE_TYPES,
@@ -43,6 +51,7 @@ function InspectForm({ panel }: { panel: PanelPassport }) {
   const invalidate = useInvalidatePanels();
   const [flags, setFlags] = useState<DamageFlag[]>(panel.inspection.damageFlags);
   const [active, setActive] = useState<DamageType | null>(null);
+  const [suggestions, setSuggestions] = useState<DefectSuggestion[] | null>(null);
   const [photos, setPhotos] = useState<PhotoRef[]>(
     panel.inspection.photos.filter((p) => p.slot !== 'nameplate'),
   );
@@ -100,9 +109,13 @@ function InspectForm({ panel }: { panel: PanelPassport }) {
   }
 
   async function addPhotos(files: File[]) {
+    // Track slots taken in this batch too: `photos` is stale inside the loop, which used to put
+    // every file of a multi-file upload into the same slot.
+    const taken = new Set(photos.map((p) => p.slot));
     for (const file of files) {
-      const slot = SLOTS.find((s) => !photos.some((p) => p.slot === s));
+      const slot = SLOTS.find((s) => !taken.has(s));
       if (!slot) break;
+      taken.add(slot);
       try {
         const photo = await api.addPhoto(panel.id, slot, file);
         setPhotos((p) => [...p.filter((x) => x.slot !== slot), photo]);
@@ -138,6 +151,28 @@ function InspectForm({ panel }: { panel: PanelPassport }) {
     }
   }
 
+  const analyse = useMutation({
+    mutationFn: async () => {
+      const blobs = await Promise.all(
+        photos.map(async (p) => ({ blob: await dataUrlToBlob(p.url), slot: p.slot })),
+      );
+      return suggestDefects(blobs);
+    },
+    onSuccess: (list) => setSuggestions(list),
+  });
+
+  /** Suggestions are never applied silently: the technician accepts each one. */
+  function acceptSuggestion(s: DefectSuggestion) {
+    setFlags((current) => {
+      const cells = CELL_TYPES.includes(s.flag.type) ? s.flag.cells : [];
+      return [...current.filter((f) => f.type !== s.flag.type), { ...s.flag, cells }];
+    });
+    setSuggestions((l) => (l ?? []).filter((x) => x !== s));
+  }
+  function acceptAll() {
+    (suggestions ?? []).forEach(acceptSuggestion);
+  }
+
   const items: UploadItem[] = photos.map((p) => ({
     id: p.id,
     name: p.name,
@@ -161,9 +196,75 @@ function InspectForm({ panel }: { panel: PanelPassport }) {
               onAdd={(f) => void addPhotos(f)}
               onRemove={(id) => void removePhoto(id)}
             />
-            <Banner tone="info" className="mt-4">
-              {t('inspect.classifyNote')}
-            </Banner>
+            <div className="mt-4 flex flex-col gap-3">
+              <div className="flex flex-wrap items-center gap-3">
+                <Button
+                  variant="secondary"
+                  size="lg"
+                  onClick={() => analyse.mutate()}
+                  loading={analyse.isPending}
+                  loadingLabel={t('inspect.analysing')}
+                  disabled={photos.length === 0}
+                >
+                  {t('inspect.analyse')}
+                </Button>
+                <p className="text-sm text-ink-3">{t('inspect.analyseHint')}</p>
+              </div>
+              {analyse.isError ? (
+                <Banner tone="warning" live>
+                  {analyse.error instanceof VisionUnavailable
+                    ? t('inspect.classifyNote')
+                    : errorMessage(analyse.error, t('errors.generic'))}
+                </Banner>
+              ) : null}
+              {suggestions && suggestions.length === 0 ? (
+                <Banner tone="success" live>
+                  {t('inspect.noneFound')}
+                </Banner>
+              ) : null}
+              {suggestions && suggestions.length > 0 ? (
+                <div className="rounded-control border border-line">
+                  <div className="flex flex-wrap items-center justify-between gap-2 border-b border-divider px-4 py-3">
+                    <p className="text-base font-medium text-ink">{t('inspect.suggestedTitle')}</p>
+                    <Button size="sm" variant="secondary" onClick={acceptAll}>
+                      {t('inspect.acceptAll')}
+                    </Button>
+                  </div>
+                  <ul className="divide-y divide-divider">
+                    {suggestions.map((s) => (
+                      <li
+                        key={s.flag.type}
+                        className="flex flex-wrap items-center justify-between gap-3 px-4 py-3"
+                      >
+                        <div className="min-w-0">
+                          <p className="text-base font-medium text-ink">
+                            {t(`damage.${s.flag.type}`)}, {t(`damage.severity.${s.flag.severity}`)}{' '}
+                            <span className="text-sm font-normal text-ink-3">
+                              {t('inspect.confidenceShort', {
+                                percent: Math.round(s.confidence * 100),
+                              })}
+                            </span>
+                          </p>
+                          <p className="text-sm text-ink-2">{s.evidence}</p>
+                        </div>
+                        <div className="flex gap-2">
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => setSuggestions((l) => (l ?? []).filter((x) => x !== s))}
+                          >
+                            {t('inspect.dismiss')}
+                          </Button>
+                          <Button size="sm" onClick={() => acceptSuggestion(s)}>
+                            {t('inspect.accept')}
+                          </Button>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ) : null}
+            </div>
           </CardBody>
         </Card>
 
